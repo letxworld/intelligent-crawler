@@ -8,3 +8,7 @@ build/
 venv/
 .pytest_cache/
 .coverage
+goal.md
+PROGRESS.md
+
+
