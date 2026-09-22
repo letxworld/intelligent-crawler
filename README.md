@@ -1,41 +1,58 @@
 # Intelligent Crawler
 
-A lightweight crawler that executes JavaScript, extracts API endpoints from loaded scripts, and guesses hidden parameters from discovered routes.
+A CLI-based intelligent web crawler for authorized bug bounty reconnaissance.
 
-## Features
+## Phase 1 Complete: Scope Enforcement
 
-- Execute and crawl JavaScript-heavy pages
-- Extract API endpoints from inline and remote scripts
-- Discover hidden parameters by analyzing endpoint patterns
-- Output results in JSON for easy downstream processing
+### What's built
 
-## Requirements
+- YAML scope config loader with validation
+- Central scope-check gate (domain wildcards, excluded paths/domains)
+- Per-host + global token-bucket rate limiter
+- Scoped fetch wrapper (every HTTP request passes through scope-check + rate limiter)
+- CLI with `crawl` and `validate` subcommands
+- Structured logging for blocked/fetched/dry-run URLs
 
-- Node.js 18+
-- npm 9+
-
-## Installation
+### Install
 
 ```bash
-git clone https://github.com/letxworld/intelligent-crawler.git
-cd intelligent-crawler
-npm install
+pip install -e .
 ```
 
-## Usage
+### Quick Start
 
-```bash
-npm start -- https://example.com
+1. Create a `scope.yaml`:
+
+```yaml
+allowed_domains:
+  - "*.example.com"
+  - "api.target.org"
+excluded_paths:
+  - "/admin/*"
+  - "/debug"
+excluded_domains:
+  - "*.staging.example.com"
+rate_limit: 10.0
+max_depth: 5
+dry_run: false
 ```
 
-## Output
-
-Endpoints and guessed parameters are written to `output.json`.
-
-## Development
+2. Validate it:
 
 ```bash
-npm test
+python -m crawler.cli validate --scope scope.yaml
+```
+
+3. Crawl (dry-run first):
+
+```bash
+python -m crawler.cli crawl --scope scope.yaml --dry-run https://app.example.com
+```
+
+### Tests
+
+```bash
+pytest tests/ -v
 ```
 
 ## License
