@@ -6,16 +6,16 @@ Today's goal: 10 small commits building Phase 1 (scope config + central scope-ch
 
 | # | Commit | Status |
 |---|--------|--------|
-| 1 | Project scaffolding (pyproject.toml, src/ structure) | TODO |
-| 2 | Scope config loader (YAML parsing + schema) | TODO |
-| 3 | Central scope-check function (domain/wildcard/exclusion matching) | TODO |
-| 4 | Rate limiter (per-host + global token bucket) | TODO |
-| 5 | Scoped fetch wrapper (HTTP client gated through scope-check) | TODO |
-| 6 | Logging configuration (structured logging for skips/limits) | TODO |
-| 7 | CLI entry point (argparse with subcommands) | TODO |
-| 8 | Unit tests for scope-check | TODO |
-| 9 | Unit tests for rate limiter | TODO |
-| 10 | Integration test + README update for Phase 1 | TODO |
+| 1 | Project scaffolding (pyproject.toml, src/ structure) | DONE |
+| 2 | Scope config loader (YAML parsing + schema) | DONE |
+| 3 | Central scope-check function (domain/wildcard/exclusion matching) | DONE |
+| 4 | Rate limiter (per-host + global token bucket) | DONE |
+| 5 | Scoped fetch wrapper (HTTP client gated through scope-check) | DONE |
+| 6 | Logging configuration (structured logging for skips/limits) | DONE |
+| 7 | CLI entry point (argparse with subcommands) | DONE |
+| 8 | Unit tests for scope-check (7 tests) | DONE |
+| 9 | Unit tests for rate limiter (4 tests) | DONE |
+| 10 | Integration tests + README update for Phase 1 | DONE |
 
 ## Build Notes
 
