@@ -18,6 +18,7 @@ class ScopeConfig:
     excluded_domains: List[str] = field(default_factory=list)
     rate_limit: float = 10.0
     max_depth: int = 5
+    max_urls_per_host: int = 0  # 0 means unlimited
     dry_run: bool = False
 
     @classmethod
@@ -37,5 +38,6 @@ class ScopeConfig:
             excluded_domains=[str(d).strip().lower() for d in raw.get("excluded_domains", [])],
             rate_limit=float(raw.get("rate_limit", 10.0)),
             max_depth=int(raw.get("max_depth", 5)),
+            max_urls_per_host=int(raw.get("max_urls_per_host", 0)),
             dry_run=bool(raw.get("dry_run", False)),
         )
