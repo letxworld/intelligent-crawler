@@ -8,6 +8,7 @@ import logging
 import sys
 from pathlib import Path
 
+from .engine import Crawler, CrawlReport
 from .fetcher import ScopedFetcher
 from .logging_config import setup_logging
 from .rate_limiter import RateLimiter
@@ -20,25 +21,47 @@ def cmd_crawl(args: argparse.Namespace) -> int:
     """Execute the crawl subcommand."""
     config = ScopeConfig.from_yaml(Path(args.scope))
     setup_logging(verbose=args.verbose)
-    rate_limiter = RateLimiter(
-        global_rate=config.rate_limit,
-        per_host_rate=config.rate_limit,
-    )
-    fetcher = ScopedFetcher(config=config, rate_limiter=rate_limiter)
+    if args.dry_run:
+        config.dry_run = True
 
-    async def run():
+    rate_limiter = RateLimiter(global_rate=config.rate_limit, per_host_rate=config.rate_limit)
+    fetcher = ScopedFetcher(config=config, rate_limiter=rate_limiter)
+    crawler = Crawler(
+        config,
+        fetcher=fetcher,
+        max_concurrency=args.concurrency,
+        per_host_concurrency=args.per_host_concurrency,
+    )
+
+    async def run() -> CrawlReport:
         try:
-            if args.dry_run:
-                config.dry_run = True
-            for url in args.urls:
-                resp = await fetcher.get(url)
-                if resp:
-                    print(resp.text[:500])
+            return await crawler.crawl(args.urls)
         finally:
             await fetcher.close()
 
-    asyncio.run(run())
+    report = asyncio.run(run())
+    print_report(report)
     return 0
+
+
+def print_report(report: CrawlReport) -> None:
+    """Print the human-readable crawl summary."""
+    print(
+        f"\nCrawled {report.fetched} URL(s), skipped {report.skipped}, "
+        f"{report.html_pages} HTML page(s) parsed in {report.duration:.1f}s"
+    )
+    for page in sorted(report.pages, key=lambda p: (p.depth, p.url)):
+        status = page.status if page.status is not None else "skipped"
+        line = f"  [{status}] d{page.depth} {page.url}"
+        if page.is_html:
+            line += f" — {page.links_found} link(s), {page.links_queued} new"
+        print(line)
+
+    candidates = report.robots_candidates
+    if candidates:
+        print("\nrobots.txt candidates (informational, never a boundary):")
+        for robots_url, path in sorted(candidates):
+            print(f"  {path}  (from {robots_url})")
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -60,6 +83,15 @@ def main() -> None:
     p_crawl = subparsers.add_parser("crawl", help="Run a scoped crawl")
     p_crawl.add_argument("-s", "--scope", required=True, help="Path to scope.yaml")
     p_crawl.add_argument("--dry-run", action="store_true", help="Parse scope but don't fetch")
+    p_crawl.add_argument(
+        "--concurrency", type=int, default=8, help="Max requests in flight overall (default 8)"
+    )
+    p_crawl.add_argument(
+        "--per-host-concurrency",
+        type=int,
+        default=4,
+        help="Max requests in flight per host (default 4)",
+    )
     p_crawl.add_argument("urls", nargs="+", help="Seed URLs to crawl")
     p_crawl.set_defaults(func=cmd_crawl)
 

@@ -7,8 +7,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from crawler.cli import print_report
+from crawler.engine import CrawlReport, PageResult
 from crawler.fetcher import ScopedFetcher
 from crawler.rate_limiter import RateLimiter
+from crawler.robots import RobotsInfo
 from crawler.scope_config import ScopeConfig
 
 
@@ -59,3 +62,36 @@ async def test_fetch_dry_run(fetcher: ScopedFetcher) -> None:
     fetcher.config.dry_run = True
     resp = await fetcher.get("https://app.example.com/page")
     assert resp is None
+
+
+def test_print_report_shows_pages_and_robots_candidates(capsys) -> None:
+    """The CLI summary must show what was fetched, skipped, and surfaced."""
+    report = CrawlReport(
+        pages=[
+            PageResult(
+                url="https://app.example.com/",
+                depth=0,
+                status=200,
+                is_html=True,
+                links_found=3,
+                links_queued=2,
+            ),
+            PageResult(url="https://app.example.com/out-of-scope", depth=1),
+        ],
+        robots={
+            "app.example.com": RobotsInfo(
+                url="https://app.example.com/robots.txt",
+                status=200,
+                disallowed=("/admin/",),
+            )
+        },
+        duration=1.5,
+    )
+
+    print_report(report)
+    out = capsys.readouterr().out
+
+    assert "Crawled 1 URL(s), skipped 1" in out
+    assert "[200] d0 https://app.example.com/" in out
+    assert "[skipped] d1 https://app.example.com/out-of-scope" in out
+    assert "/admin/" in out
