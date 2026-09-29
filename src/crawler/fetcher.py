@@ -85,8 +85,11 @@ class ScopedFetcher:
             playwright_resp: "PlaywrightResponse" = await page.goto(
                 url, wait_until="domcontentloaded", timeout=15000
             )
+            if playwright_resp is None:
+                logger.warning("FETCH-HEADLESS %s -> no response", url)
+                return None
             logger.info("FETCH-HEADLESS %s -> %d", url, playwright_resp.status)
-            return playwright_resp  # type: ignore[return-value]
+            return playwright_resp
         except Exception as exc:
             logger.error("FETCH-HEADLESS-ERROR %s — %s", url, exc)
             return None
